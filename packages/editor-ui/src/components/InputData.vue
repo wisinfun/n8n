@@ -1,5 +1,5 @@
 <template>
-	<div class="input-data-view" v-loading="workflowRunning">
+	<div class="input-data-view" v-if="node">
 		<BinaryDataDisplay :windowVisible="binaryDataDisplayVisible" :displayData="binaryDataDisplayData" @close="closeBinaryDataDisplay"/>
 
 		<div class="outputheader">
@@ -50,14 +50,14 @@
 				</span>
 
 			</div>
-			<div v-if="hasNodeRun && !hasRunError" class="title-data-display-selector" @click.stop>
+			<div v-if="inputData.length" class="title-data-display-selector" @click.stop>
 				<el-radio-group v-model="displayMode" size="mini">
 					<el-radio-button :label="$locale.baseText('runData.json')" :disabled="showData === false"></el-radio-button>
 					<el-radio-button :label="$locale.baseText('runData.table')"></el-radio-button>
 					<el-radio-button :label="$locale.baseText('runData.binary')" v-if="binaryData.length !== 0"></el-radio-button>
 				</el-radio-group>
 			</div>
-			<div v-if="hasNodeRun && !hasRunError && displayMode === $locale.baseText('runData.json') && state.path !== deselectedPlaceholder" class="select-button">
+			<div v-if="inputData.length && displayMode === $locale.baseText('runData.json') && state.path !== deselectedPlaceholder" class="select-button">
 				<el-dropdown trigger="click" @command="handleCopyClick">
 					<span class="el-dropdown-link">
 						<n8n-icon-button :title="$locale.baseText('runData.copyToClipboard')" icon="copy" />
@@ -77,11 +77,8 @@
 			</div>
 		</div>
 		<div class="data-display-content">
-			<span v-if="node && workflowRunData !== null && workflowRunData.hasOwnProperty(node.name)">
-				<div v-if="workflowRunData[node.name][runIndex].error" class="error-display">
-					<NodeErrorView :error="workflowRunData[node.name][runIndex].error" />
-				</div>
-				<span v-else>
+			<span v-if="node && inputData.length">
+				<span>
 					<div v-if="showData === false" class="too-much-data">
 						<h3>
 							{{ $locale.baseText('runData.nodeReturnedALargeAmountOfData') }}
@@ -275,15 +272,6 @@ export default mixins(
 			this.init();
 		},
 		computed: {
-			hasNodeRun(): boolean {
-				return Boolean(this.node && this.workflowRunData && this.workflowRunData.hasOwnProperty(this.node.name));
-			},
-			hasRunError(): boolean {
-				return Boolean(this.node && this.workflowRunData && this.workflowRunData[this.node.name] && this.workflowRunData[this.node.name][this.runIndex] && this.workflowRunData[this.node.name][this.runIndex].error);
-			},
-			workflowRunning (): boolean {
-				return this.$store.getters.isActionActive('workflowRunning');
-			},
 			workflowExecution (): IExecutionResponse | null {
 				return this.$store.getters.getWorkflowExecution;
 			},
@@ -410,6 +398,9 @@ export default mixins(
 				return this.workflow.getParentNodes(this.node.name, 'main', 1);
 			},
 			inputData():  INodeExecutionData[] {
+				if (!this.parentNodes.length) {
+					return [];
+				}
 				return this.getNodeInputData({name: this.parentNodes[0]} as INodeUi, this.runIndex, this.outputIndex);
 			},
 		},
