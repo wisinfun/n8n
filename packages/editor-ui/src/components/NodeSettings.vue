@@ -10,6 +10,18 @@
 					</n8n-tooltip>
 				</a>
 			</span>
+			<div
+					v-if="node && !isReadOnly"
+					class="execute-node-button"
+				>
+					<n8n-button
+						:title="$locale.baseText('runData.executesThisNodeAfterExecuting', { interpolate: { nodeName: node.name } })"
+						:loading="workflowRunning"
+						icon="play-circle"
+						:label="$locale.baseText('runData.executeNode')"
+						@click.stop="runWorkflow(node.name, 'RunData.ExecuteNodeButton')"
+					/>
+				</div>
 		</div>
 		<div class="node-is-not-valid" v-if="node && !nodeValid">
 			<n8n-text>
@@ -69,6 +81,7 @@ import { get, set, unset } from 'lodash';
 import { externalHooks } from '@/components/mixins/externalHooks';
 import { genericHelpers } from '@/components/mixins/genericHelpers';
 import { nodeHelpers } from '@/components/mixins/nodeHelpers';
+import { workflowRun } from '@/components/mixins/workflowRun';
 
 import mixins from 'vue-typed-mixins';
 
@@ -76,6 +89,7 @@ export default mixins(
 	externalHooks,
 	genericHelpers,
 	nodeHelpers,
+	workflowRun,
 )
 
 	.extend({
@@ -539,6 +553,7 @@ export default mixins(
 		padding: 1em 0 1em 1.8em;
 		font-size: var(--font-size-l);
 		background-color: $--custom-window-sidebar-top;
+		position: relative;
 
 		.node-info {
 			display: none;
@@ -654,5 +669,12 @@ export default mixins(
 		background-color: #793300;
 	}
 }
+
+.execute-node-button {
+	position: absolute;
+	top: 15px;
+	right: 10px;
+}
+
 
 </style>

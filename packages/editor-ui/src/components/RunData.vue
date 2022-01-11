@@ -2,19 +2,9 @@
 	<div class="run-data-view" v-loading="workflowRunning">
 		<BinaryDataDisplay :windowVisible="binaryDataDisplayVisible" :displayData="binaryDataDisplayData" @close="closeBinaryDataDisplay"/>
 
-		<div
-			v-if="node && !isReadOnly"
-			class="execute-node-button"
-		>
-			<n8n-button
-				:title="$locale.baseText('runData.executesThisNodeAfterExecuting', { interpolate: { nodeName: node.name } })"
-				:loading="workflowRunning"
-				icon="play-circle"
-				:label="$locale.baseText('runData.executeNode')"
-				@click.stop="runWorkflow(node.name, 'RunData.ExecuteNodeButton')"
-			/>
+		<div class="outputheader">
+			OUTPUT
 		</div>
-
 		<div class="header">
 			<div class="title-text">
 				<n8n-text :bold="true" v-if="dataCount < maxDisplayItems">
@@ -664,7 +654,7 @@ export default mixins(
 	.data-display-content {
 		position: absolute;
 		bottom: 0;
-		top: 50px;
+		top: 80px;
 		left: 0;
 		right: 0;
 		overflow-y: auto;
@@ -782,15 +772,14 @@ export default mixins(
 		}
 	}
 
-	.execute-node-button {
-		position: absolute;
-		top: 10px;
-		right: 10px;
+	.outputheader {
+		padding-top: 20px;
+		padding-left: 14px;
 	}
 
 	.header {
-		padding-top: 10px;
-		padding-left: 10px;
+		padding-top: 4px;
+		padding-left: 14px;
 
 		display: flex;
 		align-items: center;
@@ -798,7 +787,7 @@ export default mixins(
 
 		.select-button {
 			height: 30px;
-			top: 50px;
+			top: 80px;
 			right: 30px;
 			position: absolute;
 			text-align: right;
@@ -817,7 +806,7 @@ export default mixins(
 
 		.title-data-display-selector {
 			position: absolute;
-			left: calc(50% - 105px);
+			right: 0;
 			width: 210px;
 			display: inline-block;
 			text-align: center;
