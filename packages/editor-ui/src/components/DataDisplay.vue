@@ -8,6 +8,7 @@
 		@opened="showDocumentHelp = true"
 	>
 		<div class="data-display" >
+			<InputData />
 			<NodeSettings @valueChanged="valueChanged" />
 			<RunData />
 
@@ -55,12 +56,14 @@ import NodeSettings from '@/components/NodeSettings.vue';
 import RunData from '@/components/RunData.vue';
 
 import mixins from 'vue-typed-mixins';
+import InputData from './InputData.vue';
 
 export default mixins(externalHooks, nodeHelpers, workflowHelpers).extend({
 	name: 'DataDisplay',
 	components: {
 		NodeSettings,
 		RunData,
+		InputData,
 	},
 	data () {
 		return {
