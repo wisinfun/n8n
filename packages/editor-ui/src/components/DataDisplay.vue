@@ -2,8 +2,9 @@
 	<el-dialog
 		:visible="!!node"
 		:before-close="close"
-		:custom-class="`classic data-display-wrapper`"
-		width="96%"
+		:custom-class="`data-display-wrapper`"
+		:show-close="false"
+		width="98%"
 		append-to-body
 		@opened="showDocumentHelp = true"
 	>
@@ -123,7 +124,8 @@ export default mixins(externalHooks, nodeHelpers, workflowHelpers).extend({
 
 <style lang="scss">
 .data-display-wrapper {
-	height: 96%;
+	height: 88%;
+	margin: 28px 16px 16px 16px !important;
 
 	.el-dialog__header {
 		padding: 0 !important;

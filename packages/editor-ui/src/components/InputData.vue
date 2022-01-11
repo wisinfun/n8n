@@ -186,9 +186,9 @@
 			</span>
 			<div v-else class="message">
 				<div>
-					<n8n-text :bold="true">{{ $locale.baseText('runData.noData') }}</n8n-text ><br />
+					<n8n-text :bold="true">No input data yet</n8n-text ><br />
 					<br />
-					{{ $locale.baseText('runData.dataReturnedByThisNodeWillDisplayHere') }}<br />
+					This node can only receive input data if you connect to another node<br />
 				</div>
 			</div>
 		</div>
