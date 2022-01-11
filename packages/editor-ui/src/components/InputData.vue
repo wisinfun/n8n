@@ -19,16 +19,6 @@
 					</span>/
 					<n8n-text :bold="true">{{ dataCount }}</n8n-text>
 				</div>
-				<n8n-tooltip
-					v-if="runMetadata"
-					placement="right"
-				>
-					<div slot="content">
-						<n8n-text :bold="true" size="small">{{ $locale.baseText('runData.startTime') + ':' }}</n8n-text> {{runMetadata.startTime}}<br/>
-						<n8n-text :bold="true" size="small">{{ $locale.baseText('runData.executionTime') + ':' }}</n8n-text> {{runMetadata.executionTime}} {{ $locale.baseText('runData.ms') }}
-					</div>
-					<font-awesome-icon icon="info-circle" class="primary-color" />
-				</n8n-tooltip>
 				<n8n-text :bold="true" v-if="maxOutputIndex > 0">
 					| {{ $locale.baseText('runData.output') }}:
 				</n8n-text>
@@ -292,27 +282,6 @@ export default mixins(
 			node (): INodeUi | null {
 				return this.$store.getters.activeNode;
 			},
-			runMetadata () {
-				if (!this.node || this.workflowExecution === null) {
-					return null;
-				}
-
-				const runData = this.workflowRunData;
-
-				if (runData === null || !runData.hasOwnProperty(this.node.name)) {
-					return null;
-				}
-
-				if (runData[this.node.name].length <= this.runIndex) {
-					return null;
-				}
-
-				const taskData: ITaskData = runData[this.node.name][this.runIndex];
-				return {
-					executionTime: taskData.executionTime,
-					startTime: new Date(taskData.startTime).toLocaleString(),
-				};
-			},
 			dataCount (): number {
 				return this.inputData.length;
 			},
@@ -570,10 +539,10 @@ export default mixins(
 						const pathParts = newPath.split(']');
 						const index = pathParts[0].slice(1);
 						path = pathParts.slice(1).join(']');
-						startPath = `$item(${index}).$node["${this.node!.name}"].json`;
+						startPath = `$item(${index}).$node["${this.parentNodes[0]}"].json`;
 					} else if (commandData.command === 'parameterPath') {
 						path = newPath.split(']').slice(1).join(']');
-						startPath = `$node["${this.node!.name}"].json`;
+						startPath = `$node["${this.parentNodes[0]}"].json`;
 					}
 					if (!path.startsWith('[') && !path.startsWith('.') && path) {
 						path += '.';
