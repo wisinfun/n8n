@@ -326,33 +326,7 @@ export default mixins(
 				};
 			},
 			dataCount (): number {
-				if (this.node === null) {
-					return 0;
-				}
-
-				const runData: IRunData | null = this.workflowRunData;
-
-				if (runData === null || !runData.hasOwnProperty(this.node.name)) {
-					return 0;
-				}
-
-				if (runData[this.node.name].length <= this.runIndex) {
-					return 0;
-				}
-
-				if (runData[this.node.name][this.runIndex].hasOwnProperty('error')) {
-					return 1;
-				}
-
-				if (!runData[this.node.name][this.runIndex].hasOwnProperty('data') ||
-					runData[this.node.name][this.runIndex].data === undefined
-				) {
-					return 0;
-				}
-
-				const inputData = this.getMainInputData(runData[this.node.name][this.runIndex].data!, this.outputIndex);
-
-				return inputData.length;
+				return this.inputData.length;
 			},
 			maxOutputIndex (): number {
 				if (this.node === null) {
@@ -623,7 +597,7 @@ export default mixins(
 				this.showData = false;
 
 				// Check how much data there is to display
-				const inputData = this.getNodeInputData(this.node, this.runIndex, this.outputIndex);
+				const inputData = this.inputData;
 
 				const jsonItems = inputData.slice(0, this.maxDisplayItems || inputData.length).map(item => item.json);
 
