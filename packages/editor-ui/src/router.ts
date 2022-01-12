@@ -25,8 +25,8 @@ export default new Router({
 			name: 'NodeViewNew',
 			components: {
 				default: NodeView,
-				header: MainHeader,
-				sidebar: MainSidebar,
+				// header: MainHeader,
+				// sidebar: MainSidebar,
 			},
 		},
 		{

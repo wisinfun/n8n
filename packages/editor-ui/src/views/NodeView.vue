@@ -34,15 +34,15 @@
 			</div>
 		</div>
 		<DataDisplay @valueChanged="valueChanged"/>
-		<div v-if="!createNodeActive && !isReadOnly" class="node-creator-button" :title="$locale.baseText('nodeView.addNode')" @click="() => openNodeCreator('add_node_button')">
+		<!-- <div v-if="!createNodeActive && !isReadOnly" class="node-creator-button" :title="$locale.baseText('nodeView.addNode')" @click="() => openNodeCreator('add_node_button')">
 			<n8n-icon-button size="xlarge" icon="plus" />
 		</div>
 		<node-creator
 			:active="createNodeActive"
 			@nodeTypeSelected="nodeTypeSelected"
 			@closeNodeCreator="closeNodeCreator"
-			></node-creator>
-		<div :class="{ 'zoom-menu': true, expanded: !sidebarMenuCollapsed }">
+			></node-creator> -->
+		<!-- <div :class="{ 'zoom-menu': true, expanded: !sidebarMenuCollapsed }">
 			<button @click="zoomToFit" class="button-white" :title="$locale.baseText('nodeView.zoomToFit')">
 				<font-awesome-icon icon="expand"/>
 			</button>
@@ -60,8 +60,8 @@
 				>
 				<font-awesome-icon icon="undo" :title="$locale.baseText('nodeView.resetZoom')"/>
 			</button>
-		</div>
-		<div class="workflow-execute-wrapper" v-if="!isReadOnly">
+		</div> -->
+		<!-- <div class="workflow-execute-wrapper" v-if="!isReadOnly">
 			<n8n-button
 				@click.stop="runWorkflow()"
 				:loading="workflowRunning"
@@ -103,7 +103,7 @@
 				size="large"
 				@click.stop="clearExecutionData()"
 			/>
-		</div>
+		</div> -->
 		<Modals />
 	</div>
 </template>
