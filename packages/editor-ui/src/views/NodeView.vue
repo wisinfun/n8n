@@ -1819,6 +1819,20 @@ export default mixins(
 				if (this.blankRedirect) {
 					this.blankRedirect = false;
 				}
+				else if (this.$route.query.workflow && typeof this.$route.query.workflow === 'string') {
+					try {
+						console.log('resolved query', this.$route.query.workflow, decodeURI(this.$route.query.workflow));
+						const workflow = JSON.parse(decodeURIComponent(this.$route.query.workflow));
+						console.log('workflow json to render', workflow);
+						await this.importWorkflowExact({workflow});
+					} catch (e) {
+						this.$showMessage({
+							title: 'Could not import workflow',
+							message: (e as Error).message,
+							type: 'error',
+						});
+					}
+				}
 				else if (this.$route.name === 'WorkflowTemplate') {
 					const templateId = this.$route.params.id;
 					await this.openWorkflowTemplate(templateId);
@@ -2725,8 +2739,7 @@ export default mixins(
 					if (json && json.command === 'openWorkflow') {
 						try {
 							await this.importWorkflowExact(json);
-						}
-						catch (e) {
+						} catch (e) {
 							this.$showMessage({
 								title: 'Could not import workflow',
 								message: (e as Error).message,
