@@ -510,6 +510,34 @@ export default mixins(
 					});
 				}
 			},
+			async importWorkflowExact(data: {workflow: IWorkflowDataUpdate}) {
+				if (!data.workflow.nodes || !data.workflow.connections) {
+					throw new Error('Invalid workflow object');
+				}
+
+				const nodes = data.workflow.nodes;
+				const hasStartNode = !!nodes.find(node => node.type === START_NODE_TYPE);
+
+				const leftmostTop = CanvasHelpers.getLeftmostTopNode(nodes);
+
+				const diffX = CanvasHelpers.DEFAULT_START_POSITION_X - leftmostTop.position[0];
+				const diffY = CanvasHelpers.DEFAULT_START_POSITION_Y - leftmostTop.position[1];
+
+				data.workflow.nodes.map((node) => {
+					node.position[0] += diffX + (hasStartNode? 0 : CanvasHelpers.NODE_SIZE * 2);
+					node.position[1] += diffY;
+				});
+
+				if (!hasStartNode) {
+					data.workflow.nodes.push({...CanvasHelpers.DEFAULT_START_NODE});
+				}
+
+				await this.addNodes(data.workflow.nodes, data.workflow.connections);
+				this.$nextTick(() => {
+					this.zoomToFit();
+					this.$store.commit('setStateDirty', true);
+				});
+			},
 			async openWorkflowTemplate (templateId: string) {
 				this.setLoadingText(this.$locale.baseText('nodeView.loadingTemplate'));
 				this.resetWorkspace();
@@ -2693,9 +2721,17 @@ export default mixins(
 			window.addEventListener('message', async (message) => {
 				try {
 					const json = JSON.parse(message.data);
-					if (json && json.command === 'openWorkflow' && json.workflow) {
-						await this.importWorkflowData(json.workflow);
-						this.zoomToFit();
+					if (json && json.command === 'openWorkflow') {
+						try {
+							await this.importWorkflowExact(json);
+						}
+						catch (e) {
+							this.$showMessage({
+								title: 'Could not import workflow',
+								message: (e as Error).message,
+								type: 'error',
+							});
+						}
 					}
 				} catch (e) {
 				}
