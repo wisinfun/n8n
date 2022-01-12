@@ -590,7 +590,7 @@ export const addConnectionOutputSuccess = (connection: Connection, output: {tota
 export const getZoomToFit = (nodes: INodeUi[]): {offset: XYPosition, zoomLevel: number} => {
 	const {minX, minY, maxX, maxY} = getWorkflowCorners(nodes);
 
-	const PADDING = NODE_SIZE;
+	const PADDING = NODE_SIZE * 4;
 
 	const editorWidth = window.innerWidth;
 	const diffX = maxX - minX + PADDING;
