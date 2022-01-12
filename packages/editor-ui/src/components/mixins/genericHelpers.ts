@@ -12,9 +12,9 @@ export const genericHelpers = mixins(showMessage).extend({
 	},
 	computed: {
 		isReadOnly (): boolean {
-			if (['NodeViewExisting', 'NodeViewNew'].includes(this.$route.name as string)) {
-				return false;
-			}
+			// if (['NodeViewExisting', 'NodeViewNew'].includes(this.$route.name as string)) {
+			// 	return false;
+			// }
 			return true;
 		},
 	},
