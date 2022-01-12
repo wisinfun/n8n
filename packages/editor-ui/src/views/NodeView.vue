@@ -2690,6 +2690,17 @@ export default mixins(
 
 
 		async mounted () {
+			window.addEventListener('message', async (message) => {
+				try {
+					const json = JSON.parse(message.data);
+					if (json && json.command === 'openWorkflow' && json.workflow) {
+						await this.importWorkflowData(json.workflow);
+						this.zoomToFit();
+					}
+				} catch (e) {
+				}
+			});
+
 			this.$root.$on('importWorkflowData', async (data: IDataObject) => {
 				await this.importWorkflowData(data.data as IWorkflowDataUpdate);
 			});
@@ -2737,6 +2748,10 @@ export default mixins(
 				try {
 					this.initNodeView();
 					await this.initView();
+
+					if (window.top) {
+						window.top.postMessage(JSON.stringify({command: 'n8nReady'}), '*');
+					}
 				} catch (error) {
 					this.$showError(
 						error,
