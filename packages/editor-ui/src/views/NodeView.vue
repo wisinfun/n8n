@@ -511,6 +511,7 @@ export default mixins(
 				}
 			},
 			async importWorkflowExact(data: {workflow: IWorkflowDataUpdate}) {
+				console.log('importing', data); // eslint-disable-line no-console
 				if (!data.workflow.nodes || !data.workflow.connections) {
 					throw new Error('Invalid workflow object');
 				}
@@ -1821,9 +1822,9 @@ export default mixins(
 				}
 				else if (this.$route.query.workflow && typeof this.$route.query.workflow === 'string') {
 					try {
-						console.log('resolved query', this.$route.query.workflow, decodeURI(this.$route.query.workflow));
+						console.log('resolved query', this.$route.query.workflow); // eslint-disable-line no-console
+						console.log('after decoded uri', decodeURIComponent(this.$route.query.workflow)); // eslint-disable-line no-console
 						const workflow = JSON.parse(decodeURIComponent(this.$route.query.workflow));
-						console.log('workflow json to render', workflow);
 						await this.importWorkflowExact({workflow});
 					} catch (e) {
 						this.$showMessage({
