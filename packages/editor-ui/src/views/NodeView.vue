@@ -2834,16 +2834,12 @@ export default mixins(
 	$--zoom-menu-margin: 5;
 
 	position: fixed;
-	left: $--sidebar-width + $--zoom-menu-margin;
+	left: 10px;
 	width: 200px;
-	bottom: 45px;
+	bottom: 10px;
 	line-height: 25px;
 	color: #444;
 	padding-right: 5px;
-
-	@media (max-width: $--breakpoint-2xs) {
-		bottom: 90px;
-	}
 
 	&.expanded {
 		left: $--sidebar-expanded-width + $--zoom-menu-margin;
