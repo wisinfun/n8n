@@ -514,6 +514,7 @@ export default mixins(
 				if (!data.workflow.nodes || !data.workflow.connections) {
 					throw new Error('Invalid workflow object');
 				}
+				this.resetWorkspace();
 
 				const nodes = data.workflow.nodes;
 				const hasStartNode = !!nodes.find(node => node.type === START_NODE_TYPE);
@@ -1872,19 +1873,19 @@ export default mixins(
 				document.addEventListener('keydown', this.keyDown);
 				document.addEventListener('keyup', this.keyUp);
 
-				window.addEventListener("beforeunload",  (e) => {
-					if(this.$store.getters.getStateIsDirty === true) {
-						const confirmationMessage = this.$locale.baseText('nodeView.itLooksLikeYouHaveBeenEditingSomething');
-						(e || window.event).returnValue = confirmationMessage; //Gecko + IE
-						return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
-					} else {
-						this.startLoading(
-							this.$locale.baseText('nodeView.redirecting'),
-						);
+				// window.addEventListener("beforeunload",  (e) => {
+				// 	if(this.$store.getters.getStateIsDirty === true) {
+				// 		const confirmationMessage = this.$locale.baseText('nodeView.itLooksLikeYouHaveBeenEditingSomething');
+				// 		(e || window.event).returnValue = confirmationMessage; //Gecko + IE
+				// 		return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+				// 	} else {
+				// 		this.startLoading(
+				// 			this.$locale.baseText('nodeView.redirecting'),
+				// 		);
 
-						return;
-					}
-				});
+				// 		return;
+				// 	}
+				// });
 			},
 			getOutputEndpointUUID(nodeName: string, index: number) {
 				return CanvasHelpers.getOutputEndpointUUID(this.getNodeIndex(nodeName), index);
