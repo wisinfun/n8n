@@ -605,7 +605,7 @@ export const getZoomToFit = (nodes: INodeUi[]): {offset: XYPosition, zoomLevel: 
 	xOffset += (editorWidth - (maxX - minX + NODE_SIZE) * zoomLevel) / 2; // add padding to center workflow
 
 	let yOffset = (minY * -1) * zoomLevel; // find top right corner
-	yOffset += (editorHeight - (maxY - minY + NODE_SIZE * 2) * zoomLevel) / 2; // add padding to center workflow
+	yOffset += (editorHeight - (maxY - minY + NODE_SIZE) * zoomLevel) / 2; // add padding to center workflow
 
 	return {
 		zoomLevel,
