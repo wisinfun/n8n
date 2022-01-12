@@ -2736,6 +2736,7 @@ export default mixins(
 		async mounted () {
 			window.addEventListener('message', async (message) => {
 				try {
+					console.log('n8n message', message.data); // eslint-disable-line no-console
 					const json = JSON.parse(message.data);
 					if (json && json.command === 'openWorkflow') {
 						try {
