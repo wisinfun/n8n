@@ -19,7 +19,7 @@
 					</span>/
 					<n8n-text :bold="true">{{ dataCount }}</n8n-text>
 				</div>
-				<n8n-text :bold="true" v-if="maxOutputIndex > 0">
+				<!-- <n8n-text :bold="true" v-if="maxOutputIndex > 0">
 					| {{ $locale.baseText('runData.output') }}:
 				</n8n-text>
 				<span class="opts" v-if="maxOutputIndex > 0" >
@@ -37,7 +37,7 @@
 						<n8n-option v-for="option in (maxRunIndex + 1)" :label="option + '/' + (maxRunIndex+1)" :value="option-1" :key="option">
 						</n8n-option>
 					</n8n-select>
-				</span>
+				</span> -->
 
 			</div>
 			<div v-if="inputData.length" class="title-data-display-selector" @click.stop>
