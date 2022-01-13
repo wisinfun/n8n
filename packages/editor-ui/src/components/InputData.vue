@@ -172,11 +172,17 @@
 				</span>
 			</span>
 			<div v-else class="message">
-				<div>
-					<n8n-text :bold="true">No input data yet</n8n-text ><br />
-					<br />
-					This node can only receive input data if you connect to another node<br />
-				</div>
+					<span class="info-icon">
+						<font-awesome-icon
+								icon="info-circle"
+						/>
+					</span>
+					<span class="title-info-message">
+						<n8n-heading size="xlarge" color="text-base" v-if="hasParentNode">No input data yet</n8n-heading>
+						<n8n-heading size="xlarge" color="text-base" v-else>Wire me up</n8n-heading>
+					</span>
+					<n8n-text color="text-base" align="center" v-if="hasParentNode">Execute previous nodes to send their output data to this node</n8n-text>
+					<n8n-text color="text-base" align="center" v-else>This node can only receive input data if you connect it to another node</n8n-text>
 			</div>
 		</div>
 	</div>
@@ -365,6 +371,9 @@ export default mixins(
 				}
 
 				return this.workflow.getParentNodes(this.node.name, 'main', 1);
+			},
+			hasParentNode (): boolean {
+				return this.parentNodes.length > 0;
 			},
 			inputData():  INodeExecutionData[] {
 				if (!this.parentNodes.length) {
@@ -685,6 +694,26 @@ export default mixins(
 		.message,
 		.no-data {
 			margin: 1em;
+		}
+
+		.message {
+			display: flex;
+			flex-direction: column;
+			margin-left: 20%;
+			margin-right: 20%;
+			margin-top: 180px;
+			text-align: center;
+
+			.info-icon {
+				text-align: center;
+				font-size: 55px;
+				color: var(--color-foreground-dark);
+				margin-bottom: var(--spacing-l);
+			}
+
+			.title-info-message {
+				margin-bottom: 8px;
+			}
 		}
 
 		.too-much-data  {
