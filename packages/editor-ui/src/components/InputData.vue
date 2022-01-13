@@ -195,6 +195,7 @@ import {
 	GenericValue,
 	IBinaryKeyData,
 	IDataObject,
+	INodeConnections,
 	INodeExecutionData,
 	INodeTypeDescription,
 	IRunData,
@@ -376,10 +377,18 @@ export default mixins(
 				return this.parentNodes.length > 0;
 			},
 			inputData():  INodeExecutionData[] {
-				if (!this.parentNodes.length) {
+				if (!this.parentNodes.length || !this.node) {
 					return [];
 				}
-				return this.getNodeInputData({name: this.parentNodes[0]} as INodeUi, this.runIndex, this.outputIndex);
+				const parentNode = this.parentNodes[0];
+				const nodeConnections = (this.$store.getters.outgoingConnectionsByNodeName(parentNode) as INodeConnections).main;
+				for (let i = 0; i < nodeConnections.length; i++) {
+					if (nodeConnections[i] && nodeConnections[i][0] && nodeConnections[i][0].node === this.node.name) {
+						return this.getNodeInputData({name: parentNode} as INodeUi, this.runIndex, i);
+					}
+				}
+
+				return [];
 			},
 		},
 		methods: {
