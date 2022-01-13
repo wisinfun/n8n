@@ -10,18 +10,18 @@
 					</n8n-tooltip>
 				</a>
 			</span>
-			<div
-					v-if="node && !isReadOnly"
-					class="execute-node-button"
-				>
-					<n8n-button
-						:title="$locale.baseText('runData.executesThisNodeAfterExecuting', { interpolate: { nodeName: node.name } })"
-						:loading="workflowRunning"
-						icon="play-circle"
-						:label="$locale.baseText('runData.executeNode')"
-						@click.stop="runWorkflow(node.name, 'RunData.ExecuteNodeButton')"
-					/>
-				</div>
+		</div>
+		<div
+			v-if="node && !isReadOnly"
+			class="execute-node-button"
+		>
+			<n8n-button
+				:title="$locale.baseText('runData.executesThisNodeAfterExecuting', { interpolate: { nodeName: node.name } })"
+				:loading="workflowRunning"
+				icon="play-circle"
+				:label="$locale.baseText('runData.executeNode')"
+				@click.stop="runWorkflow(node.name, 'RunData.ExecuteNodeButton')"
+			/>
 		</div>
 		<div class="node-is-not-valid" v-if="node && !nodeValid">
 			<n8n-text>
@@ -544,6 +544,7 @@ export default mixins(
 	overflow: hidden;
 	min-width: 350px;
 	max-width: 350px;
+	position: relative;
 
 	.no-parameters {
 		margin-top: var(--spacing-xs);
