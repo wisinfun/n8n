@@ -547,8 +547,8 @@ export default mixins(
 	position: relative;
 	border-left: var(--border-base);
 	border-right: var(--border-base);
-	-webkit-box-shadow: 0px 4px 12px 0px rgba(31,31,31,0.25);
-	box-shadow: 0px 4px 12px 0px rgba(31,31,31,0.25);
+	-webkit-box-shadow: 0 4px 16px 0 rgb(31 31 31 / 12%);
+	box-shadow: 0 4px 16px 0 rgb(31 31 31 / 12%);
 	z-index: 1000;
 
 	.no-parameters {
