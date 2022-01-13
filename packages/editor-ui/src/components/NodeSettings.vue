@@ -545,6 +545,8 @@ export default mixins(
 	min-width: 350px;
 	max-width: 350px;
 	position: relative;
+	border-left: var(--border-base);
+	border-right: var(--border-base);
 
 	.no-parameters {
 		margin-top: var(--spacing-xs);
