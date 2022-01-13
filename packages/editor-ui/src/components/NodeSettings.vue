@@ -550,8 +550,8 @@ export default mixins(
 	}
 
 	.header-side-menu {
-		padding: 1em 0 1em 1.8em;
-		font-size: var(--font-size-l);
+		padding: 1em 0 1em 1em;
+		font-size: 17px;
 		background-color: $--custom-window-sidebar-top;
 		position: relative;
 
