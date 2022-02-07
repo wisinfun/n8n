@@ -120,6 +120,9 @@ export default mixins(
 	mounted() {
 		this.$telemetry.page('Editor', this.$route.name);
 	},
+	mounted() {
+		this.$telemetry.page('Editor', this.$route.name);
+	},
 	watch: {
 		'$route'(route) {
 			this.authenticate();

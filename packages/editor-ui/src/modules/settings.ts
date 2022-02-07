@@ -1,5 +1,6 @@
 import {  ActionContext, Module } from 'vuex';
 import {
+	ILogLevel,
 	IN8nPrompts,
 	IN8nUISettings,
 	IN8nValueSurveyData,
@@ -9,7 +10,8 @@ import {
 import { getSettings } from '../api/settings-mock';
 import { getPromptsData, submitValueSurvey, submitContactInfo } from '../api/settings';
 import Vue from 'vue';
-import { CONTACT_PROMPT_MODAL_KEY, VALUE_SURVEY_MODAL_KEY } from '@/constants';
+import { CONTACT_PROMPT_MODAL_KEY, PERSONALIZATION_MODAL_KEY, VALUE_SURVEY_MODAL_KEY } from '@/constants';
+import { ITelemetrySettings } from 'n8n-workflow';
 
 const module: Module<ISettingsState, IRootState> = {
 	namespaced: true,
@@ -40,6 +42,15 @@ const module: Module<ISettingsState, IRootState> = {
 		},
 		isPersonalizationSurveyEnabled(state: ISettingsState) {
 			return state.settings.telemetry.enabled && state.settings.personalizationSurveyEnabled;
+		},
+		telemetry: (state): ITelemetrySettings => {
+			return state.settings.telemetry;
+		},
+		logLevel: (state): ILogLevel => {
+			return state.settings.logLevel;
+		},
+		isTelemetryEnabled: (state) => {
+			return state.settings.telemetry && state.settings.telemetry.enabled;
 		},
 	},
 	mutations: {
@@ -77,10 +88,21 @@ const module: Module<ISettingsState, IRootState> = {
 			context.commit('setN8nMetadata', settings.n8nMetadata || {}, {root: true});
 			context.commit('setDefaultLocale', settings.defaultLocale, {root: true});
 			context.commit('versions/setVersionNotificationSettings', settings.versionNotifications, {root: true});
-			context.commit('setTelemetry', settings.telemetry, {root: true});
+
+			const showPersonalizationsModal = settings.personalizationSurvey && settings.personalizationSurvey.shouldShow && !settings.personalizationSurvey.answers;
+
+			if (showPersonalizationsModal) {
+				context.commit('ui/openModal', PERSONALIZATION_MODAL_KEY, {root: true});
+			}
+			return settings;
+		},
+		async submitPersonalizationSurvey(context: ActionContext<ISettingsState, IRootState>, results: IPersonalizationSurveyAnswers) {
+			await submitPersonalizationSurvey(context.rootGetters.getRestApiContext, results);
+
+			context.commit('setPersonalizationAnswers', results);
 		},
 		async fetchPromptsData(context: ActionContext<ISettingsState, IRootState>) {
-			if (!context.rootGetters.isTelemetryEnabled) {
+			if (!context.getters.isTelemetryEnabled) {
 				return;
 			}
 
