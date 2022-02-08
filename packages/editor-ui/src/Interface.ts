@@ -557,6 +557,7 @@ export interface IN8nUISettings {
 	userManagement: IUserManagementConfig;
 	defaultLocale: string;
 	logLevel: ILogLevel;
+	tagsEnabled: boolean;
 }
 
 export interface IWorkflowSettings extends IWorkflowSettingsWorkflow {

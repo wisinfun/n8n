@@ -173,7 +173,7 @@ export async function logout(context: IRestApiContext): Promise<void> {
 }
 
 export async function setupOwner(context: IRestApiContext, params: { firstName: string; lastName: string; email: string; password: string;}): Promise<IUserResponse> {
-	log(context, 'POST', '/owner-setup', params as unknown as IDataObject);
+	log(context, 'POST', '/owner/setup', params as unknown as IDataObject);
 	const user = getCurrUser();
 	removeUser('0');
 	const newUser: IUserResponse = {...user, ...params};
@@ -202,7 +202,7 @@ export async function signup(context: IRestApiContext, params: {inviterId: strin
 		throw new Error('invalid token. try query ?inviterId=123&inviteeId=345');
 	}
 
-	log(context, 'POST', '/user', params as unknown as IDataObject);
+	log(context, 'POST', `/users/${params.inviteeId}`, params as unknown as IDataObject);
 
 	const newUser: IUserResponse = {...params, email: `${params.firstName}@n8n.io`, id: getRandomId(), "globalRole": {name: 'member', id: '2'}};
 	window.localStorage.setItem('mock.users.currentUserId', newUser.id);
