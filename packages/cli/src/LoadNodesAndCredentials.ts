@@ -14,6 +14,7 @@ import { CUSTOM_EXTENSION_ENV, UserSettings } from 'n8n-core';
 import {
 	CodexData,
 	ICredentialType,
+	ICredentialTypeData,
 	ILogger,
 	INodeType,
 	INodeTypeData,
@@ -45,9 +46,7 @@ const CUSTOM_NODES_CATEGORY = 'Custom Nodes';
 class LoadNodesAndCredentialsClass {
 	nodeTypes: INodeTypeData = {};
 
-	credentialTypes: {
-		[key: string]: ICredentialType;
-	} = {};
+	credentialTypes: ICredentialTypeData = {};
 
 	excludeNodes: string[] | undefined = undefined;
 
@@ -200,7 +199,10 @@ class LoadNodesAndCredentialsClass {
 			}
 		}
 
-		this.credentialTypes[tempCredential.name] = tempCredential;
+		this.credentialTypes[tempCredential.name] = {
+			type: tempCredential,
+			sourcePath: filePath,
+		};
 	}
 
 	async loadNpmModuleFromUrl(url: string): Promise<INodeTypeNameVersion[]> {

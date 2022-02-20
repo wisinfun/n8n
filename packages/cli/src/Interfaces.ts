@@ -5,7 +5,6 @@ import {
 	ICredentialDataDecryptedObject,
 	ICredentialsDecrypted,
 	ICredentialsEncrypted,
-	ICredentialType,
 	IDataObject,
 	IDeferredPromise,
 	IExecuteResponsePromiseData,
@@ -57,7 +56,10 @@ export interface ICustomRequest extends Request {
 }
 
 export interface ICredentialsTypeData {
-	[key: string]: ICredentialType;
+	[key: string]: {
+		className: string;
+		sourcePath: string;
+	};
 }
 
 export interface ICredentialsOverwrite {
@@ -418,6 +420,7 @@ export interface IN8nUISettings {
 	telemetry: ITelemetrySettings;
 	personalizationSurvey: IPersonalizationSurvey;
 	defaultLocale: string;
+	logLevel: 'info' | 'debug' | 'warn' | 'error' | 'verbose';
 }
 
 export interface IPersonalizationSurveyAnswers {

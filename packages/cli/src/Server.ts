@@ -52,36 +52,30 @@ import {
 	BinaryDataManager,
 	Credentials,
 	IBinaryDataConfig,
-	ICredentialTestFunctions,
 	LoadNodeParameterOptions,
-	NodeExecuteFunctions,
 	UserSettings,
 } from 'n8n-core';
 
 import {
-	ICredentialsDecrypted,
 	ICredentialType,
 	IDataObject,
 	INodeCredentials,
 	INodeCredentialsDetails,
+	INodeCredentialTestRequest,
+	INodeCredentialTestResult,
 	INodeParameters,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	INodeTypeNameVersion,
-	INodeVersionedType,
 	ITelemetrySettings,
 	IWorkflowBase,
 	LoggerProxy,
-	NodeCredentialTestRequest,
-	NodeCredentialTestResult,
 	NodeHelpers,
+	WebhookHttpMethod,
 	Workflow,
-	ICredentialsEncrypted,
 	WorkflowExecuteMode,
 } from 'n8n-workflow';
-
-import { NodeVersionedType } from 'n8n-nodes-base';
 
 import * as basicAuth from 'basic-auth';
 import * as compression from 'compression';
@@ -151,7 +145,7 @@ import { InternalHooksManager } from './InternalHooksManager';
 import { TagEntity } from './databases/entities/TagEntity';
 import { WorkflowEntity } from './databases/entities/WorkflowEntity';
 import { NameRequest } from './WorkflowHelpers';
-import { getNodeTranslationPath } from './TranslationHelpers';
+import { getCredentialTranslationPath, getNodeTranslationPath } from './TranslationHelpers';
 
 require('body-parser-xml')(bodyParser);
 
@@ -210,6 +204,8 @@ class App {
 
 	presetCredentialsLoaded: boolean;
 
+	webhookMethods: WebhookHttpMethod[];
+
 	constructor() {
 		this.app = express();
 
@@ -244,6 +240,8 @@ class App {
 
 		this.presetCredentialsLoaded = false;
 		this.endpointPresetCredentials = config.get('credentials.overwrite.endpoint') as string;
+
+		this.webhookMethods = ['DELETE', 'GET', 'HEAD', 'PATCH', 'POST', 'PUT'];
 
 		const urlBaseWebhook = WebhookHelpers.getWebhookBaseUrl();
 
@@ -289,6 +287,7 @@ class App {
 				shouldShow: false,
 			},
 			defaultLocale: config.get('defaultLocale'),
+			logLevel: config.get('logs.level'),
 		};
 	}
 
@@ -647,6 +646,8 @@ class App {
 
 		// Does very basic health check
 		this.app.get('/healthz', async (req: express.Request, res: express.Response) => {
+			LoggerProxy.debug('Health check started!');
+
 			const connection = getConnectionManager().get();
 
 			try {
@@ -666,6 +667,8 @@ class App {
 			const responseData = {
 				status: 'ok',
 			};
+
+			LoggerProxy.debug('Health check completed successfully!');
 
 			ResponseHelper.sendSuccessResponse(res, responseData, true, 200);
 		});
@@ -923,7 +926,7 @@ class App {
 					}
 
 					await this.externalHooks.run('workflow.afterUpdate', [workflow]);
-					void InternalHooksManager.getInstance().onWorkflowSaved(workflow as IWorkflowBase);
+					void InternalHooksManager.getInstance().onWorkflowSaved(workflow);
 
 					if (workflow.active) {
 						// When the workflow is supposed to be active add it again
@@ -1149,7 +1152,6 @@ class App {
 					if (req.query.credentials !== undefined) {
 						credentials = JSON.parse(req.query.credentials as string);
 					}
-					const methodName = req.query.methodName as string;
 
 					const nodeTypes = NodeTypes();
 
@@ -1164,7 +1166,20 @@ class App {
 
 					const additionalData = await WorkflowExecuteAdditionalData.getBase(currentNodeParameters);
 
-					return loadDataInstance.getOptions(methodName, additionalData);
+					if (req.query.methodName) {
+						return loadDataInstance.getOptionsViaMethodName(
+							req.query.methodName as string,
+							additionalData,
+						);
+					}
+					if (req.query.loadOptions) {
+						return loadDataInstance.getOptionsViaRequestProperty(
+							JSON.parse(req.query.loadOptions as string),
+							additionalData,
+						);
+					}
+
+					return [];
 				},
 			),
 		);
@@ -1210,6 +1225,27 @@ class App {
 			),
 		);
 
+		this.app.get(
+			`/${this.restEndpoint}/credential-translation`,
+			ResponseHelper.send(
+				async (
+					req: express.Request & { query: { credentialType: string } },
+					res: express.Response,
+				): Promise<object | null> => {
+					const translationPath = getCredentialTranslationPath({
+						locale: this.frontendSettings.defaultLocale,
+						credentialType: req.query.credentialType,
+					});
+
+					try {
+						return require(translationPath);
+					} catch (error) {
+						return null;
+					}
+				},
+			),
+		);
+
 		// Returns node information based on node names and versions
 		this.app.post(
 			`/${this.restEndpoint}/node-types`,
@@ -1233,13 +1269,17 @@ class App {
 						nodeTypes: INodeTypeDescription[],
 					) {
 						const { description, sourcePath } = NodeTypes().getWithSourcePath(name, version);
-						const translationPath = await getNodeTranslationPath(sourcePath, defaultLocale);
+						const translationPath = await getNodeTranslationPath({
+							nodeSourcePath: sourcePath,
+							longNodeType: description.name,
+							locale: defaultLocale,
+						});
 
 						try {
 							const translation = await readFile(translationPath, 'utf8');
 							description.translation = JSON.parse(translation);
 						} catch (error) {
-							// ignore - no translation at expected translation path
+							// ignore - no translation exists at path
 						}
 
 						nodeTypes.push(description);
@@ -1435,87 +1475,25 @@ class App {
 		this.app.post(
 			`/${this.restEndpoint}/credentials-test`,
 			ResponseHelper.send(
-				async (req: express.Request, res: express.Response): Promise<NodeCredentialTestResult> => {
-					const incomingData = req.body as NodeCredentialTestRequest;
+				async (req: express.Request, res: express.Response): Promise<INodeCredentialTestResult> => {
+					const incomingData = req.body as INodeCredentialTestRequest;
+
+					const encryptionKey = await UserSettings.getEncryptionKey();
+					if (encryptionKey === undefined) {
+						return {
+							status: 'Error',
+							message: 'No encryption key got found to decrypt the credentials!',
+						};
+					}
+
+					const credentialsHelper = new CredentialsHelper(encryptionKey);
+
 					const credentialType = incomingData.credentials.type;
-
-					// Find nodes that can test this credential.
-					const nodeTypes = NodeTypes();
-					const allNodes = nodeTypes.getAll();
-
-					let foundTestFunction:
-						| ((
-								this: ICredentialTestFunctions,
-								credential: ICredentialsDecrypted,
-						  ) => Promise<NodeCredentialTestResult>)
-						| undefined;
-					const nodeThatCanTestThisCredential = allNodes.find((node) => {
-						if (
-							incomingData.nodeToTestWith &&
-							node.description.name !== incomingData.nodeToTestWith
-						) {
-							return false;
-						}
-
-						if (node instanceof NodeVersionedType) {
-							const versionNames = Object.keys((node as INodeVersionedType).nodeVersions);
-							for (const versionName of versionNames) {
-								const nodeType = (node as INodeVersionedType).nodeVersions[
-									versionName as unknown as number
-								];
-								// eslint-disable-next-line @typescript-eslint/no-loop-func
-								const credentialTestable = nodeType.description.credentials?.find((credential) => {
-									const testFunctionSearch =
-										credential.name === credentialType && !!credential.testedBy;
-									if (testFunctionSearch) {
-										foundTestFunction = (node as unknown as INodeType).methods!.credentialTest![
-											credential.testedBy!
-										];
-									}
-									return testFunctionSearch;
-								});
-								if (credentialTestable) {
-									return true;
-								}
-							}
-							return false;
-						}
-						const credentialTestable = (node as INodeType).description.credentials?.find(
-							(credential) => {
-								const testFunctionSearch =
-									credential.name === credentialType && !!credential.testedBy;
-								if (testFunctionSearch) {
-									foundTestFunction = (node as INodeType).methods!.credentialTest![
-										credential.testedBy!
-									];
-								}
-								return testFunctionSearch;
-							},
-						);
-						return !!credentialTestable;
-					});
-
-					if (!nodeThatCanTestThisCredential) {
-						return Promise.resolve({
-							status: 'Error',
-							message: 'There are no nodes that can test this credential.',
-						});
-					}
-
-					if (foundTestFunction === undefined) {
-						return Promise.resolve({
-							status: 'Error',
-							message: 'No testing function found for this credential.',
-						});
-					}
-
-					const credentialTestFunctions = NodeExecuteFunctions.getCredentialTestFunctions();
-
-					const output = await foundTestFunction.call(
-						credentialTestFunctions,
+					return credentialsHelper.testCredentials(
+						credentialType,
 						incomingData.credentials,
+						incomingData.nodeToTestWith,
 					);
-					return Promise.resolve(output);
 				},
 			),
 		);
@@ -2763,107 +2741,45 @@ class App {
 			WebhookServer.registerProductionWebhooks.apply(this);
 		}
 
-		// HEAD webhook requests (test for UI)
-		this.app.head(
+		// Register all webhook requests (test for UI)
+		this.app.all(
 			`/${this.endpointWebhookTest}/*`,
 			async (req: express.Request, res: express.Response) => {
 				// Cut away the "/webhook-test/" to get the registred part of the url
 				const requestUrl = (req as ICustomRequest).parsedUrl!.pathname!.slice(
 					this.endpointWebhookTest.length + 2,
 				);
+
+				const method = req.method.toUpperCase() as WebhookHttpMethod;
+
+				if (method === 'OPTIONS') {
+					let allowedMethods: string[];
+					try {
+						allowedMethods = await this.testWebhooks.getWebhookMethods(requestUrl);
+						allowedMethods.push('OPTIONS');
+
+						// Add custom "Allow" header to satisfy OPTIONS response.
+						res.append('Allow', allowedMethods);
+					} catch (error) {
+						ResponseHelper.sendErrorResponse(res, error);
+						return;
+					}
+
+					ResponseHelper.sendSuccessResponse(res, {}, true, 204);
+					return;
+				}
+
+				if (!this.webhookMethods.includes(method)) {
+					ResponseHelper.sendErrorResponse(
+						res,
+						new Error(`The method ${method} is not supported.`),
+					);
+					return;
+				}
 
 				let response;
 				try {
-					response = await this.testWebhooks.callTestWebhook('HEAD', requestUrl, req, res);
-				} catch (error) {
-					ResponseHelper.sendErrorResponse(res, error);
-					return;
-				}
-
-				if (response.noWebhookResponse === true) {
-					// Nothing else to do as the response got already sent
-					return;
-				}
-
-				ResponseHelper.sendSuccessResponse(
-					res,
-					response.data,
-					true,
-					response.responseCode,
-					response.headers,
-				);
-			},
-		);
-
-		// HEAD webhook requests (test for UI)
-		this.app.options(
-			`/${this.endpointWebhookTest}/*`,
-			async (req: express.Request, res: express.Response) => {
-				// Cut away the "/webhook-test/" to get the registred part of the url
-				const requestUrl = (req as ICustomRequest).parsedUrl!.pathname!.slice(
-					this.endpointWebhookTest.length + 2,
-				);
-
-				let allowedMethods: string[];
-				try {
-					allowedMethods = await this.testWebhooks.getWebhookMethods(requestUrl);
-					allowedMethods.push('OPTIONS');
-
-					// Add custom "Allow" header to satisfy OPTIONS response.
-					res.append('Allow', allowedMethods);
-				} catch (error) {
-					ResponseHelper.sendErrorResponse(res, error);
-					return;
-				}
-
-				ResponseHelper.sendSuccessResponse(res, {}, true, 204);
-			},
-		);
-
-		// GET webhook requests (test for UI)
-		this.app.get(
-			`/${this.endpointWebhookTest}/*`,
-			async (req: express.Request, res: express.Response) => {
-				// Cut away the "/webhook-test/" to get the registred part of the url
-				const requestUrl = (req as ICustomRequest).parsedUrl!.pathname!.slice(
-					this.endpointWebhookTest.length + 2,
-				);
-
-				let response;
-				try {
-					response = await this.testWebhooks.callTestWebhook('GET', requestUrl, req, res);
-				} catch (error) {
-					ResponseHelper.sendErrorResponse(res, error);
-					return;
-				}
-
-				if (response.noWebhookResponse === true) {
-					// Nothing else to do as the response got already sent
-					return;
-				}
-
-				ResponseHelper.sendSuccessResponse(
-					res,
-					response.data,
-					true,
-					response.responseCode,
-					response.headers,
-				);
-			},
-		);
-
-		// POST webhook requests (test for UI)
-		this.app.post(
-			`/${this.endpointWebhookTest}/*`,
-			async (req: express.Request, res: express.Response) => {
-				// Cut away the "/webhook-test/" to get the registred part of the url
-				const requestUrl = (req as ICustomRequest).parsedUrl!.pathname!.slice(
-					this.endpointWebhookTest.length + 2,
-				);
-
-				let response;
-				try {
-					response = await this.testWebhooks.callTestWebhook('POST', requestUrl, req, res);
+					response = await this.testWebhooks.callTestWebhook(method, requestUrl, req, res);
 				} catch (error) {
 					ResponseHelper.sendErrorResponse(res, error);
 					return;
