@@ -1,15 +1,11 @@
-import {
+import type {
 	IExecuteFunctions,
 	IHookFunctions,
 	ILoadOptionsFunctions,
-} from 'n8n-core';
-
-import {
 	GenericValue,
 	IDataObject,
 	IHttpRequestMethods,
 	IHttpRequestOptions,
-	NodeOperationError,
 } from 'n8n-workflow';
 
 /**
@@ -24,10 +20,6 @@ export async function apiRequest(
 ) {
 	const credentials = await this.getCredentials('mattermostApi');
 
-	if (!credentials) {
-		throw new NodeOperationError(this.getNode(), 'No credentials returned!');
-	}
-
 	const options: IHttpRequestOptions = {
 		method,
 		body,
@@ -36,6 +28,7 @@ export async function apiRequest(
 		headers: {
 			'content-type': 'application/json; charset=utf-8',
 		},
+		skipSslCertificateValidation: credentials.allowUnauthorizedCerts as boolean,
 	};
 
 	return this.helpers.httpRequestWithAuthentication.call(this, 'mattermostApi', options);
@@ -48,7 +41,6 @@ export async function apiRequestAllItems(
 	body: IDataObject = {},
 	query: IDataObject = {},
 ) {
-
 	const returnData: IDataObject[] = [];
 
 	let responseData;
@@ -58,10 +50,8 @@ export async function apiRequestAllItems(
 	do {
 		responseData = await apiRequest.call(this, method, endpoint, body, query);
 		query.page++;
-		returnData.push.apply(returnData, responseData);
-	} while (
-		responseData.length !== 0
-	);
+		returnData.push.apply(returnData, responseData as IDataObject[]);
+	} while (responseData.length !== 0);
 
 	return returnData;
 }

@@ -1,13 +1,15 @@
-import config = require('../../../config');
+import config from '@/config';
 
-export const REST_PATH_SEGMENT = config.get('endpoints.rest') as Readonly<string>;
+export const REST_PATH_SEGMENT = config.getEnv('endpoints.rest') as Readonly<string>;
+
+export const PUBLIC_API_REST_PATH_SEGMENT = config.getEnv('publicApi.path') as Readonly<string>;
 
 export const AUTHLESS_ENDPOINTS: Readonly<string[]> = [
 	'healthz',
 	'metrics',
-	config.get('endpoints.webhook') as string,
-	config.get('endpoints.webhookWaiting') as string,
-	config.get('endpoints.webhookTest') as string,
+	config.getEnv('endpoints.webhook'),
+	config.getEnv('endpoints.webhookWaiting'),
+	config.getEnv('endpoints.webhookTest'),
 ];
 
 export const SUCCESS_RESPONSE_BODY = {
@@ -26,11 +28,10 @@ export const LOGGED_OUT_RESPONSE_BODY = {
  * Routes requiring a valid `n8n-auth` cookie for a user, either owner or member.
  */
 export const ROUTES_REQUIRING_AUTHENTICATION: Readonly<string[]> = [
-	'GET /me',
 	'PATCH /me',
 	'PATCH /me/password',
 	'POST /me/survey',
-	'POST /owner',
+	'POST /owner/setup',
 	'GET /non-existent',
 ];
 
@@ -39,21 +40,24 @@ export const ROUTES_REQUIRING_AUTHENTICATION: Readonly<string[]> = [
  */
 export const ROUTES_REQUIRING_AUTHORIZATION: Readonly<string[]> = [
 	'POST /users',
-	'GET /users',
 	'DELETE /users/123',
 	'POST /users/123/reinvite',
-	'POST /owner',
+	'POST /owner/pre-setup',
+	'POST /owner/setup',
 	'POST /owner/skip-setup',
 ];
 
-/**
- * Name of the connection used for creating and dropping a Postgres DB
- * for each suite test run.
- */
-export const BOOTSTRAP_POSTGRES_CONNECTION_NAME: Readonly<string> = 'n8n_bs_postgres';
+export const COMMUNITY_PACKAGE_VERSION = {
+	CURRENT: '0.1.0',
+	UPDATED: '0.2.0',
+};
+
+export const COMMUNITY_NODE_VERSION = {
+	CURRENT: 1,
+	UPDATED: 2,
+};
 
 /**
- * Name of the connection (and database) used for creating and dropping a MySQL DB
- * for each suite test run.
+ * Timeout (in milliseconds) to account for DB being slow to initialize.
  */
-export const BOOTSTRAP_MYSQL_CONNECTION_NAME: Readonly<string> = 'n8n_bs_mysql';
+export const DB_INITIALIZATION_TIMEOUT = 30_000;

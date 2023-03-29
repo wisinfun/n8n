@@ -1,68 +1,40 @@
-/* eslint-disable import/no-cycle */
 import {
 	AfterLoad,
 	AfterUpdate,
 	BeforeUpdate,
 	Column,
-	ColumnOptions,
-	CreateDateColumn,
 	Entity,
 	Index,
 	OneToMany,
 	ManyToOne,
 	PrimaryGeneratedColumn,
-	UpdateDateColumn,
+	BeforeInsert,
 } from 'typeorm';
 import { IsEmail, IsString, Length } from 'class-validator';
-import config = require('../../../config');
-import { DatabaseType, IPersonalizationSurveyAnswers } from '../..';
+import type { IUser } from 'n8n-workflow';
 import { Role } from './Role';
-import { SharedWorkflow } from './SharedWorkflow';
-import { SharedCredentials } from './SharedCredentials';
+import type { SharedWorkflow } from './SharedWorkflow';
+import type { SharedCredentials } from './SharedCredentials';
 import { NoXss } from '../utils/customValidators';
-import { answersFormatter } from '../utils/transformers';
+import { objectRetriever, lowerCaser } from '../utils/transformers';
+import { AbstractEntity, jsonColumnType } from './AbstractEntity';
+import type { IPersonalizationSurveyAnswers, IUserSettings } from '@/Interfaces';
+import type { AuthIdentity } from './AuthIdentity';
 
 export const MIN_PASSWORD_LENGTH = 8;
 
 export const MAX_PASSWORD_LENGTH = 64;
 
-function resolveDataType(dataType: string) {
-	const dbType = config.get('database.type') as DatabaseType;
-
-	const typeMap: { [key in DatabaseType]: { [key: string]: string } } = {
-		sqlite: {
-			json: 'simple-json',
-		},
-		postgresdb: {
-			datetime: 'timestamptz',
-		},
-		mysqldb: {},
-		mariadb: {},
-	};
-
-	return typeMap[dbType][dataType] ?? dataType;
-}
-
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-function getTimestampSyntax() {
-	const dbType = config.get('database.type') as DatabaseType;
-
-	const map: { [key in DatabaseType]: string } = {
-		sqlite: "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')",
-		postgresdb: 'CURRENT_TIMESTAMP(3)',
-		mysqldb: 'CURRENT_TIMESTAMP(3)',
-		mariadb: 'CURRENT_TIMESTAMP(3)',
-	};
-
-	return map[dbType];
-}
-
 @Entity()
-export class User {
+export class User extends AbstractEntity implements IUser {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@Column({ length: 254 })
+	@Column({
+		length: 254,
+		nullable: true,
+		transformer: lowerCaser,
+	})
 	@Index({ unique: true })
 	@IsEmail()
 	email: string;
@@ -81,7 +53,7 @@ export class User {
 
 	@Column({ nullable: true })
 	@IsString({ message: 'Password must be of type string.' })
-	password?: string;
+	password: string;
 
 	@Column({ type: String, nullable: true })
 	resetPasswordToken?: string | null;
@@ -91,38 +63,45 @@ export class User {
 	resetPasswordTokenExpiration?: number | null;
 
 	@Column({
-		type: resolveDataType('json') as ColumnOptions['type'],
+		type: jsonColumnType,
 		nullable: true,
-		transformer: answersFormatter,
+		transformer: objectRetriever,
 	})
 	personalizationAnswers: IPersonalizationSurveyAnswers | null;
 
-	@ManyToOne(() => Role, (role) => role.globalForUsers, {
-		cascade: true,
-		nullable: false,
+	@Column({
+		type: jsonColumnType,
+		nullable: true,
 	})
+	settings: IUserSettings | null;
+
+	@ManyToOne('Role', 'globalForUsers', { nullable: false })
 	globalRole: Role;
 
-	@OneToMany(() => SharedWorkflow, (sharedWorkflow) => sharedWorkflow.user)
+	@Column()
+	globalRoleId: string;
+
+	@OneToMany('AuthIdentity', 'user')
+	authIdentities: AuthIdentity[];
+
+	@OneToMany('SharedWorkflow', 'user')
 	sharedWorkflows: SharedWorkflow[];
 
-	@OneToMany(() => SharedCredentials, (sharedCredentials) => sharedCredentials.user)
+	@OneToMany('SharedCredentials', 'user')
 	sharedCredentials: SharedCredentials[];
 
-	@CreateDateColumn({ precision: 3, default: () => getTimestampSyntax() })
-	createdAt: Date;
+	@Column({ type: Boolean, default: false })
+	disabled: boolean;
 
-	@UpdateDateColumn({
-		precision: 3,
-		default: () => getTimestampSyntax(),
-		onUpdate: getTimestampSyntax(),
-	})
-	updatedAt: Date;
-
+	@BeforeInsert()
 	@BeforeUpdate()
-	setUpdateDate(): void {
-		this.updatedAt = new Date();
+	preUpsertHook(): void {
+		this.email = this.email?.toLowerCase() ?? null;
 	}
+
+	@Column({ type: String, nullable: true })
+	@Index({ unique: true })
+	apiKey?: string | null;
 
 	/**
 	 * Whether the user is pending setup completion.
@@ -132,6 +111,6 @@ export class User {
 	@AfterLoad()
 	@AfterUpdate()
 	computeIsPending(): void {
-		this.isPending = this.password == null;
+		this.isPending = this.password === null;
 	}
 }

@@ -1,24 +1,35 @@
 import type { ICredentialDataDecryptedObject, ICredentialNodeAccess } from 'n8n-workflow';
-import type { ICredentialsDb } from '../../../src';
-import type { CredentialsEntity } from '../../../src/databases/entities/CredentialsEntity';
-import type { User } from '../../../src/databases/entities/User';
+import type { SuperAgentTest } from 'supertest';
 
-export type SmtpTestAccount = {
-	user: string;
-	pass: string;
-	smtp: {
-		host: string;
-		port: number;
-		secure: boolean;
-	};
-};
+import type { CredentialsEntity } from '@db/entities/CredentialsEntity';
+import type { User } from '@db/entities/User';
+import type { ICredentialsDb, IDatabaseCollections } from '@/Interfaces';
 
-type EndpointGroup = 'me' | 'users' | 'auth' | 'owner' | 'passwordReset' | 'credentials';
+export type CollectionName = keyof IDatabaseCollections;
+
+export type ApiPath = 'internal' | 'public';
+
+export type AuthAgent = (user: User) => SuperAgentTest;
+
+type EndpointGroup =
+	| 'me'
+	| 'users'
+	| 'auth'
+	| 'owner'
+	| 'passwordReset'
+	| 'credentials'
+	| 'workflows'
+	| 'publicApi'
+	| 'nodes'
+	| 'ldap'
+	| 'saml'
+	| 'eventBus'
+	| 'license';
 
 export type CredentialPayload = {
 	name: string;
 	type: string;
-	nodesAccess: ICredentialNodeAccess[];
+	nodesAccess?: ICredentialNodeAccess[];
 	data: ICredentialDataDecryptedObject;
 };
 
@@ -26,3 +37,19 @@ export type SaveCredentialFunction = (
 	credentialPayload: CredentialPayload,
 	{ user }: { user: User },
 ) => Promise<CredentialsEntity & ICredentialsDb>;
+
+export type PostgresSchemaSection = {
+	[K in 'host' | 'port' | 'schema' | 'user' | 'password']: { env: string };
+};
+
+export type InstalledPackagePayload = {
+	packageName: string;
+	installedVersion: string;
+};
+
+export type InstalledNodePayload = {
+	name: string;
+	type: string;
+	latestVersion: number;
+	package: string;
+};
